@@ -3,11 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes">
-    <title>LaTeX · 极速渲染器</title>
-    <!-- 预连接 CDN，加速资源加载 -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://cdn.bootcdn.net">
-    <!-- 使用稳定的 tex-chtml.js 输出，确保兼容性 -->
+    <title>LaTeX · 渲染器</title>
     <script>
         window.MathJax = {
             tex: {
@@ -20,14 +16,12 @@
             chtml: { fontURL: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2' }
         };
     </script>
-    <!-- 主脚本：tex-chtml.js，带 fallback 至 jsdelivr -->
     <script src="https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-chtml.js"
             id="MathJax-script"
             async
             onerror="this.onerror=null; let s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js'; document.head.appendChild(s);">
     </script>
     <style>
-        /* 精简关键CSS，保留全部功能但体积更小 */
         *{box-sizing:border-box;margin:0;padding:0}
         body{
             background:#e2ecf0;
@@ -143,10 +137,9 @@
             transition:background .15s;
         }
         
-        /* ========== 深色主题：强制所有文字为纯白色 ========== */
         body.dark-mode{
             background:#0f262e;
-            color:#ffffff !important;  /* 全局文字白色 */
+            color:#ffffff !important;
         }
         body.dark-mode .app{
             background:#1f404a;
@@ -159,7 +152,6 @@
             border-color:#2a6a7a;
             color:#ffffff !important;
         }
-        /* 输入框内部文字白色，背景加深保证对比 */
         body.dark-mode textarea{
             background:#2a5663;
             color:#ffffff !important;
@@ -168,7 +160,6 @@
         body.dark-mode textarea::placeholder{
             color:#cce7ed;
         }
-        /* 所有标题、标签、按钮文字强制白色 */
         body.dark-mode h1,
         body.dark-mode .input-header,
         body.dark-mode .render-title,
@@ -177,7 +168,6 @@
         body.dark-mode .sidebar-header span{
             color:#ffffff !important;
         }
-        /* 按钮：深色模式下保留原有背景，文字白色 */
         body.dark-mode .btn{
             background:#2d7a8c;
             color:white !important;
@@ -191,7 +181,6 @@
         body.dark-mode .btn-outline:hover{
             background:#357e8f;
         }
-        /* 侧边栏深色样式 */
         body.dark-mode .settings-sidebar{
             background:#1f404a;
             border-left-color:#3c7e8c;
@@ -207,16 +196,13 @@
             background:#1f404a;
             color:white;
         }
-        /* 强制MathJax公式文字为纯白色（覆盖内联样式） */
         body.dark-mode .render-area mjx-container{
             color:#ffffff !important;
         }
-        /* 全屏激活状态 */
         body.dark-mode .render-area.fullscreen-active{
             background:#1f454e;
         }
 
-        /* 侧边栏样式 */
         .sidebar-toggle-btn{
             position:fixed;
             top:20px;
@@ -281,9 +267,7 @@
             background:white;
         }
         
-        /* ========== 打印样式优化：只保留渲染区域，隐藏所有界面元素 ========== */
         @media print {
-            /* 隐藏所有非渲染区域元素 */
             .app > *:not(#mathContainer):not(.render-area) {
                 display: none !important;
             }
@@ -294,7 +278,6 @@
                 display: none !important;
             }
             
-            /* 确保渲染区域独占一页 */
             body, body.dark-mode {
                 background: white !important;
                 padding: 0 !important;
@@ -327,12 +310,10 @@
                 page-break-inside: avoid !important;
             }
             
-            /* 公式颜色打印时强制黑色 */
             .render-area mjx-container {
                 color: black !important;
             }
             
-            /* 移除所有背景色 */
             .render-area, body, .app {
                 background: white !important;
             }
@@ -354,7 +335,6 @@
         <div class="render-header"><span class="render-title">✨ 输出</span></div>
         <div id="mathContainer" class="render-area"></div>
     </div>
-    <!-- 侧边栏齿轮 -->
     <div class="sidebar-toggle-btn" id="sidebarToggleBtn">⚙️</div>
     <div class="settings-sidebar" id="settingsSidebar">
         <div class="sidebar-header">
@@ -390,7 +370,6 @@
         (function(){
             "use strict";
 
-            // ---------- DOM 元素 ----------
             const inputEl = document.getElementById('latexInput');
             const container = document.getElementById('mathContainer');
             const renderBtn = document.getElementById('renderBtn');
@@ -405,23 +384,18 @@
             const fontSizeLabel = document.getElementById('fontSizeLabel');
             const lineHeightLabel = document.getElementById('lineHeightLabel');
 
-            // ---------- 缓存与状态 ----------
-            let lastRenderedSource = '';          // 最后一次渲染的原始输入
-            let isMathJaxReady = false;           // MathJax 是否已加载完成
-            let renderTimer = null;               // 防抖定时器
-            let pendingRender = false;            // 是否有待处理的渲染请求
+            let lastRenderedSource = '';
+            let isMathJaxReady = false;
+            let renderTimer = null;
+            let pendingRender = false;
 
-            // ---------- 工具函数 ----------
             const escapeHtml = (s) => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[c]);
 
-            // 智能添加定界符（优化正则，避免误判）
             function autoWrapDelimiters(text) {
                 if (!text) return '';
-                // 快速检测是否已有定界符
                 const hasDelim = /[$]|\\[()[\]]|\$\$/.test(text);
                 const looksLikeLatex = /\\[a-zA-Z]+|[_\^]/.test(text);
                 if (!hasDelim && looksLikeLatex) {
-                    // 按行处理，仅对需要添加的行加$
                     return text.split('\n').map(line => {
                         const trimmed = line.trim();
                         if (trimmed && !/[$]|\\[()[\]]|\$\$/.test(line) && /\\[a-zA-Z]+|[_\^]/.test(line)) {
@@ -433,10 +407,8 @@
                 return text;
             }
 
-            // ---------- 核心渲染函数（强制渲染，不走缓存）---------
             function renderNow() {
                 const source = inputEl.value;
-                // 更新缓存
                 lastRenderedSource = source;
 
                 const processed = autoWrapDelimiters(source);
@@ -459,17 +431,14 @@
                 }
             }
 
-            // ---------- 智能渲染：内容不变则跳过，否则执行渲染 ----------
             function smartRender(force = false) {
                 const source = inputEl.value;
                 if (!force && source === lastRenderedSource) {
-                    // 内容未变，无需任何操作
                     return Promise.resolve();
                 }
                 return renderNow();
             }
 
-            // ---------- 防抖渲染（用于输入事件）----------
             function debouncedRender(force = false) {
                 if (renderTimer) clearTimeout(renderTimer);
                 if (force) {
@@ -479,35 +448,78 @@
                 }
             }
 
-            // ---------- 等待 MathJax 就绪，并执行首次渲染 ----------
             function waitForMathJax() {
                 if (window.MathJax && MathJax.texReset && MathJax.typesetPromise) {
                     isMathJaxReady = true;
-                    // 首次渲染强制进行
                     renderNow().catch(e => console.warn('首次渲染失败', e));
                 } else {
                     setTimeout(waitForMathJax, 50);
                 }
             }
 
-            // ---------- 主题切换（纯CSS，绝不触发重绘）----------
             const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
             
+            function setCookie(name, value, days) {
+                const d = new Date();
+                d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+                document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/;SameSite=Lax";
+            }
+
+            function getCookie(name) {
+                const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+                return match ? decodeURIComponent(match[2]) : null;
+            }
+
+            function saveSettingsToCookie() {
+                const settings = {
+                    font: fontSelect.value,
+                    fontSize: fontSizeSlider.value,
+                    lineHeight: lineHeightSlider.value,
+                    theme: document.querySelector('input[name="themeMode"]:checked')?.value || 'auto'
+                };
+                setCookie('latexRendererSettings', JSON.stringify(settings), 365);
+            }
+
+            function loadSettingsFromCookie() {
+                const cookie = getCookie('latexRendererSettings');
+                if (cookie) {
+                    try {
+                        const settings = JSON.parse(cookie);
+                        if (settings.font) {
+                            const optionExists = Array.from(fontSelect.options).some(opt => opt.value === settings.font);
+                            if (optionExists) fontSelect.value = settings.font;
+                        }
+                        if (settings.fontSize) fontSizeSlider.value = settings.fontSize;
+                        if (settings.lineHeight) lineHeightSlider.value = settings.lineHeight;
+                        if (settings.theme) {
+                            const radio = document.querySelector(`input[name="themeMode"][value="${settings.theme}"]`);
+                            if (radio) radio.checked = true;
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            loadSettingsFromCookie();
+
             function applyTheme() {
                 const mode = document.querySelector('input[name="themeMode"]:checked')?.value || 'auto';
                 const isDark = mode === 'dark' || (mode === 'auto' && systemDark.matches);
                 document.body.classList.toggle('dark-mode', isDark);
+                saveSettingsToCookie();
             }
             
-            // 监听系统主题变化
-            systemDark.addEventListener('change', applyTheme);
+            systemDark.addEventListener('change', () => {
+                applyTheme();
+                saveSettingsToCookie();
+            });
             
-            // 监听单选框变化
             document.querySelectorAll('input[name="themeMode"]').forEach(r => {
-                r.addEventListener('change', applyTheme);
+                r.addEventListener('change', () => {
+                    applyTheme();
+                    saveSettingsToCookie();
+                });
             });
 
-            // ---------- 侧边栏交互 ----------
             toggleBtn.addEventListener('click', () => sidebar.classList.toggle('active'));
             closeBtn.addEventListener('click', () => sidebar.classList.remove('active'));
             document.addEventListener('click', (e) => {
@@ -516,41 +528,40 @@
                 }
             });
 
-            // ---------- 样式设置（字体、字号、行距）----------
             function applyStyle() {
                 container.style.fontFamily = fontSelect.value;
                 container.style.fontSize = fontSizeSlider.value + 'rem';
                 container.style.lineHeight = lineHeightSlider.value;
             }
-            // 字体变化必须重新渲染公式（因为CHTML输出内联样式依赖于字体设置）
+
             fontSelect.addEventListener('change', () => {
                 applyStyle();
-                smartRender(true);   // 强制重新渲染，应用新字体到公式
+                smartRender(true);
+                saveSettingsToCookie();
             });
             fontSizeSlider.addEventListener('input', function() {
                 fontSizeLabel.textContent = this.value + 'rem';
                 applyStyle();
+                saveSettingsToCookie();
             });
             lineHeightSlider.addEventListener('input', function() {
                 lineHeightLabel.textContent = this.value;
                 applyStyle();
+                saveSettingsToCookie();
             });
-            // 初始化滑块显示与样式
+
             fontSizeLabel.textContent = fontSizeSlider.value + 'rem';
             lineHeightLabel.textContent = lineHeightSlider.value;
             applyStyle();
 
-            // ---------- PDF 打印（确保渲染完成）----------
             function exportPDF() {
                 smartRender(true).finally(() => {
-                    // 使用 requestAnimationFrame 确保渲染完成后再打印
                     requestAnimationFrame(() => {
                         window.print();
                     });
                 });
             }
 
-            // ---------- 全屏 ----------
             function toggleFullScreen() {
                 if (!document.fullscreenElement) {
                     container.requestFullscreen().catch(console.warn);
@@ -559,12 +570,10 @@
                 }
             }
 
-            // ---------- 事件绑定 ----------
             renderBtn.addEventListener('click', () => smartRender(true));
             fullscreenBtn.addEventListener('click', toggleFullScreen);
             pdfBtn.addEventListener('click', exportPDF);
 
-            // Ctrl+Enter 强制渲染
             inputEl.addEventListener('keydown', (e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                     e.preventDefault();
@@ -572,14 +581,10 @@
                 }
             });
 
-            // 输入框内容变化时自动防抖渲染（实时预览）
             inputEl.addEventListener('input', () => debouncedRender(false));
 
-            // ---------- 立即执行：先应用主题，再启动 MathJax ----------
-            // 关键修复：在页面加载时立即应用主题，而不是等待 load 事件
             applyTheme();
             
-            // 启动 MathJax 就绪检测
             waitForMathJax();
         })();
     </script>
