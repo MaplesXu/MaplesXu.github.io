@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes">
+    <title>LaTeX · 极速渲染器</title>
+    <!-- 预连接 CDN，加速资源加载 -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdn.bootcdn.net">
+    <!-- 使用稳定的 tex-chtml.js 输出，确保兼容性 -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$','$'], ['\\(','\\)']],
+                displayMath: [['$$','$$'], ['\\[','\\]']],
+                processEscapes: true
+            },
+            options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] },
+            loader: { load: ['[tex]/noerrors'] },
+            chtml: { fontURL: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2' }
+        };
+    </script>
+    <!-- 主脚本：tex-chtml.js，带 fallback 至 jsdelivr -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-chtml.js"
+            id="MathJax-script"
+            async
+            onerror="this.onerror=null; let s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js'; document.head.appendChild(s);">
+    </script>
+    <style>
+        /* 精简关键CSS，保留全部功能但体积更小 */
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{
+            background:#e2ecf0;
+            font-family:Inter, sans-serif;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            min-height:100vh;
+            padding:16px;
+            transition:background .15s;
+        }
+        .app{
+            max-width:950px;
+            width:100%;
+            background:white;
+            border-radius:24px;
+            box-shadow:0 16px 30px -10px #1b4a5a30;
+            padding:24px 28px;
+            border:1px solid #cfe1e9;
+        }
+        h1{
+            font-size:1.6rem;
+            font-weight:550;
+            color:#0b4452;
+            margin-bottom:6px;
+        }
+        .input-box{
+            background:#f6fcff;
+            border-radius:20px;
+            padding:18px;
+            border:1px solid #cfe1e9;
+            margin-bottom:16px;
+        }
+        .input-header{
+            display:flex;
+            justify-content:space-between;
+            font-size:0.9rem;
+            font-weight:600;
+            color:#0e5563;
+            margin-bottom:10px;
+        }
+        textarea{
+            width:100%;
+            padding:16px 18px;
+            border:1px solid #bfd7e2;
+            border-radius:18px;
+            font-family:'JetBrains Mono',monospace;
+            font-size:0.9rem;
+            line-height:1.6;
+            background:white;
+            resize:vertical;
+        }
+        textarea:focus{
+            border-color:#318ca0;
+            outline:none;
+            box-shadow:0 0 0 2px #318ca030;
+        }
+        .toolbar{
+            display:flex;
+            flex-wrap:wrap;
+            justify-content:center;
+            gap:16px;
+            margin:12px 0 8px;
+        }
+        .btn{
+            border:none;
+            background:#1d6d7c;
+            color:white;
+            padding:10px 26px;
+            border-radius:36px;
+            font-weight:600;
+            font-size:0.95rem;
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            cursor:pointer;
+            border:1px solid #ffffff80;
+            box-shadow:0 6px 12px -8px #0c4a55;
+            transition:0.1s;
+        }
+        .btn:hover{
+            background:#2a889b;
+            transform:scale(0.97);
+        }
+        .btn-outline{
+            background:white;
+            color:#1a6b78;
+            border:1px solid #3993a8;
+            box-shadow:none;
+        }
+        .btn-outline:hover{
+            background:#ecf8fc;
+        }
+        .render-header{
+            display:flex;
+            justify-content:space-between;
+            margin:22px 0 10px;
+        }
+        .render-title{
+            font-weight:600;
+            color:#0a5a67;
+        }
+        .render-area{
+            background:#faffff;
+            border-radius:20px;
+            padding:24px 28px;
+            border:1px solid #c0dbe6;
+            overflow-x:auto;
+            font-size:1.2rem;
+            line-height:2;
+            min-height:150px;
+            font-family:Inter, sans-serif;
+            transition:background .15s;
+        }
+        
+        /* ========== 深色主题：强制所有文字为纯白色 ========== */
+        body.dark-mode{
+            background:#0f262e;
+            color:#ffffff !important;  /* 全局文字白色 */
+        }
+        body.dark-mode .app{
+            background:#1f404a;
+            border-color:#2c6573;
+            color:#ffffff !important;
+        }
+        body.dark-mode .input-box,
+        body.dark-mode .render-area{
+            background:#1f454e;
+            border-color:#2a6a7a;
+            color:#ffffff !important;
+        }
+        /* 输入框内部文字白色，背景加深保证对比 */
+        body.dark-mode textarea{
+            background:#2a5663;
+            color:#ffffff !important;
+            border-color:#3f8b9c;
+        }
+        body.dark-mode textarea::placeholder{
+            color:#cce7ed;
+        }
+        /* 所有标题、标签、按钮文字强制白色 */
+        body.dark-mode h1,
+        body.dark-mode .input-header,
+        body.dark-mode .render-title,
+        body.dark-mode .sidebar-item label,
+        body.dark-mode .sidebar-header h3,
+        body.dark-mode .sidebar-header span{
+            color:#ffffff !important;
+        }
+        /* 按钮：深色模式下保留原有背景，文字白色 */
+        body.dark-mode .btn{
+            background:#2d7a8c;
+            color:white !important;
+            border-color:#aad4df;
+        }
+        body.dark-mode .btn-outline{
+            background:transparent;
+            color:white !important;
+            border-color:#7fc1d0;
+        }
+        body.dark-mode .btn-outline:hover{
+            background:#357e8f;
+        }
+        /* 侧边栏深色样式 */
+        body.dark-mode .settings-sidebar{
+            background:#1f404a;
+            border-left-color:#3c7e8c;
+            color:#ffffff !important;
+        }
+        body.dark-mode select,
+        body.dark-mode input[type="range"]{
+            background:#2d616e;
+            color:white !important;
+            border-color:#8dcbd6;
+        }
+        body.dark-mode option{
+            background:#1f404a;
+            color:white;
+        }
+        /* 强制MathJax公式文字为纯白色（覆盖内联样式） */
+        body.dark-mode .render-area mjx-container{
+            color:#ffffff !important;
+        }
+        /* 全屏激活状态 */
+        body.dark-mode .render-area.fullscreen-active{
+            background:#1f454e;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar-toggle-btn{
+            position:fixed;
+            top:20px;
+            right:20px;
+            width:48px;
+            height:48px;
+            background:#1f6573;
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color:white;
+            font-size:26px;
+            cursor:pointer;
+            z-index:1001;
+            border:2px solid #ffffffcc;
+        }
+        .settings-sidebar{
+            position:fixed;
+            top:0;
+            right:0;
+            width:280px;
+            height:100vh;
+            background:white;
+            box-shadow:-6px 0 20px #143c46;
+            padding:28px 20px;
+            z-index:1000;
+            transform:translateX(100%);
+            transition:transform .2s;
+            border-left:1px solid #cfe1e9;
+            overflow-y:auto;
+        }
+        .settings-sidebar.active{
+            transform:translateX(0);
+        }
+        .sidebar-header{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:28px;
+        }
+        .close-sidebar{
+            font-size:28px;
+            cursor:pointer;
+            padding:0 8px;
+            color:#1f6573;
+        }
+        .sidebar-item{
+            margin-bottom:24px;
+            display:flex;
+            flex-direction:column;
+            gap:8px;
+        }
+        .sidebar-item label{
+            font-weight:600;
+            color:#0b4452;
+        }
+        select,input[type=range]{
+            padding:8px 12px;
+            border-radius:30px;
+            border:1px solid #96c0cc;
+            background:white;
+        }
+        
+        /* ========== 打印样式优化：只保留渲染区域，隐藏所有界面元素 ========== */
+        @media print {
+            /* 隐藏所有非渲染区域元素 */
+            .app > *:not(#mathContainer):not(.render-area) {
+                display: none !important;
+            }
+            .input-box, .toolbar, .render-header, 
+            .sidebar-toggle-btn, .settings-sidebar, 
+            h1, .sub, .badge, hr, .status-line,
+            .btn, .btn-outline {
+                display: none !important;
+            }
+            
+            /* 确保渲染区域独占一页 */
+            body, body.dark-mode {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: block !important;
+            }
+            
+            .app {
+                background: transparent !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+            
+            .render-area {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 1.5cm !important;
+                background: white !important;
+                color: black !important;
+                font-size: 12pt !important;
+                line-height: 1.8 !important;
+                font-family: Inter, sans-serif !important;
+                margin: 0 auto !important;
+                width: 100% !important;
+                min-height: auto !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+            }
+            
+            /* 公式颜色打印时强制黑色 */
+            .render-area mjx-container {
+                color: black !important;
+            }
+            
+            /* 移除所有背景色 */
+            .render-area, body, .app {
+                background: white !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <h1>LaTeX·渲染器</h1>
+        <div class="input-box">
+            <div class="input-header"><span>📋 源码</span></div>
+            <textarea id="latexInput" rows="4">\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}</textarea>
+        </div>
+        <div class="toolbar">
+            <button class="btn" id="renderBtn">⚡ 渲染</button>
+            <button class="btn btn-outline" id="fullscreenBtn">📺 全屏</button>
+            <button class="btn btn-outline" id="pdfBtn">📄 PDF</button>
+        </div>
+        <div class="render-header"><span class="render-title">✨ 输出</span></div>
+        <div id="mathContainer" class="render-area"></div>
+    </div>
+    <!-- 侧边栏齿轮 -->
+    <div class="sidebar-toggle-btn" id="sidebarToggleBtn">⚙️</div>
+    <div class="settings-sidebar" id="settingsSidebar">
+        <div class="sidebar-header">
+            <h3 style="margin:0">🛠️ 设置</h3>
+            <span class="close-sidebar" id="closeSidebarBtn">✕</span>
+        </div>
+        <div class="sidebar-item">
+            <label>🖋️ 字体</label>
+            <select id="fontSelect">
+                <option value="Inter, sans-serif">无衬线</option>
+                <option value="Times New Roman, serif">衬线</option>
+                <option value="JetBrains Mono, monospace">等宽</option>
+            </select>
+        </div>
+        <div class="sidebar-item">
+            <label>🔠 字号 <span id="fontSizeLabel">1.2rem</span></label>
+            <input type="range" id="fontSizeSlider" min="0.8" max="1.8" step="0.05" value="1.2">
+        </div>
+        <div class="sidebar-item">
+            <label>📏 行距 <span id="lineHeightLabel">2.0</span></label>
+            <input type="range" id="lineHeightSlider" min="1.2" max="2.8" step="0.1" value="2.0">
+        </div>
+        <div class="sidebar-item">
+            <label>🌓 主题</label>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <label style="font-weight:normal"><input type="radio" name="themeMode" value="auto" checked> 跟随系统</label>
+                <label style="font-weight:normal"><input type="radio" name="themeMode" value="light"> 亮色</label>
+                <label style="font-weight:normal"><input type="radio" name="themeMode" value="dark"> 暗色</label>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function(){
+            "use strict";
+
+            // ---------- DOM 元素 ----------
+            const inputEl = document.getElementById('latexInput');
+            const container = document.getElementById('mathContainer');
+            const renderBtn = document.getElementById('renderBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const pdfBtn = document.getElementById('pdfBtn');
+            const sidebar = document.getElementById('settingsSidebar');
+            const toggleBtn = document.getElementById('sidebarToggleBtn');
+            const closeBtn = document.getElementById('closeSidebarBtn');
+            const fontSelect = document.getElementById('fontSelect');
+            const fontSizeSlider = document.getElementById('fontSizeSlider');
+            const lineHeightSlider = document.getElementById('lineHeightSlider');
+            const fontSizeLabel = document.getElementById('fontSizeLabel');
+            const lineHeightLabel = document.getElementById('lineHeightLabel');
+
+            // ---------- 缓存与状态 ----------
+            let lastRenderedSource = '';          // 最后一次渲染的原始输入
+            let isMathJaxReady = false;           // MathJax 是否已加载完成
+            let renderTimer = null;               // 防抖定时器
+            let pendingRender = false;            // 是否有待处理的渲染请求
+
+            // ---------- 工具函数 ----------
+            const escapeHtml = (s) => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[c]);
+
+            // 智能添加定界符（优化正则，避免误判）
+            function autoWrapDelimiters(text) {
+                if (!text) return '';
+                // 快速检测是否已有定界符
+                const hasDelim = /[$]|\\[()[\]]|\$\$/.test(text);
+                const looksLikeLatex = /\\[a-zA-Z]+|[_\^]/.test(text);
+                if (!hasDelim && looksLikeLatex) {
+                    // 按行处理，仅对需要添加的行加$
+                    return text.split('\n').map(line => {
+                        const trimmed = line.trim();
+                        if (trimmed && !/[$]|\\[()[\]]|\$\$/.test(line) && /\\[a-zA-Z]+|[_\^]/.test(line)) {
+                            return '$' + line + '$';
+                        }
+                        return line;
+                    }).join('\n');
+                }
+                return text;
+            }
+
+            // ---------- 核心渲染函数（强制渲染，不走缓存）---------
+            function renderNow() {
+                const source = inputEl.value;
+                // 更新缓存
+                lastRenderedSource = source;
+
+                const processed = autoWrapDelimiters(source);
+                const lines = processed.split('\n');
+                let html = '';
+                for (let line of lines) {
+                    if (line.trim() === '') html += '<br>';
+                    else html += `<p style="margin:0.6rem 0;">${escapeHtml(line)}</p>`;
+                }
+                container.innerHTML = html;
+
+                if (window.MathJax && MathJax.texReset && MathJax.typesetPromise) {
+                    MathJax.texReset();
+                    return MathJax.typesetPromise([container]).catch(err => {
+                        console.warn('公式渲染错误:', err);
+                        container.innerHTML += '<p style="color:#b34a4a;">⚠️ LaTeX 语法错误</p>';
+                    });
+                } else {
+                    return Promise.reject('MathJax 未就绪');
+                }
+            }
+
+            // ---------- 智能渲染：内容不变则跳过，否则执行渲染 ----------
+            function smartRender(force = false) {
+                const source = inputEl.value;
+                if (!force && source === lastRenderedSource) {
+                    // 内容未变，无需任何操作
+                    return Promise.resolve();
+                }
+                return renderNow();
+            }
+
+            // ---------- 防抖渲染（用于输入事件）----------
+            function debouncedRender(force = false) {
+                if (renderTimer) clearTimeout(renderTimer);
+                if (force) {
+                    smartRender(true);
+                } else {
+                    renderTimer = setTimeout(() => smartRender(false), 250);
+                }
+            }
+
+            // ---------- 等待 MathJax 就绪，并执行首次渲染 ----------
+            function waitForMathJax() {
+                if (window.MathJax && MathJax.texReset && MathJax.typesetPromise) {
+                    isMathJaxReady = true;
+                    // 首次渲染强制进行
+                    renderNow().catch(e => console.warn('首次渲染失败', e));
+                } else {
+                    setTimeout(waitForMathJax, 50);
+                }
+            }
+
+            // ---------- 主题切换（纯CSS，绝不触发重绘）----------
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+            
+            function applyTheme() {
+                const mode = document.querySelector('input[name="themeMode"]:checked')?.value || 'auto';
+                const isDark = mode === 'dark' || (mode === 'auto' && systemDark.matches);
+                document.body.classList.toggle('dark-mode', isDark);
+            }
+            
+            // 监听系统主题变化
+            systemDark.addEventListener('change', applyTheme);
+            
+            // 监听单选框变化
+            document.querySelectorAll('input[name="themeMode"]').forEach(r => {
+                r.addEventListener('change', applyTheme);
+            });
+
+            // ---------- 侧边栏交互 ----------
+            toggleBtn.addEventListener('click', () => sidebar.classList.toggle('active'));
+            closeBtn.addEventListener('click', () => sidebar.classList.remove('active'));
+            document.addEventListener('click', (e) => {
+                if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && e.target !== toggleBtn) {
+                    sidebar.classList.remove('active');
+                }
+            });
+
+            // ---------- 样式设置（字体、字号、行距）----------
+            function applyStyle() {
+                container.style.fontFamily = fontSelect.value;
+                container.style.fontSize = fontSizeSlider.value + 'rem';
+                container.style.lineHeight = lineHeightSlider.value;
+            }
+            // 字体变化必须重新渲染公式（因为CHTML输出内联样式依赖于字体设置）
+            fontSelect.addEventListener('change', () => {
+                applyStyle();
+                smartRender(true);   // 强制重新渲染，应用新字体到公式
+            });
+            fontSizeSlider.addEventListener('input', function() {
+                fontSizeLabel.textContent = this.value + 'rem';
+                applyStyle();
+            });
+            lineHeightSlider.addEventListener('input', function() {
+                lineHeightLabel.textContent = this.value;
+                applyStyle();
+            });
+            // 初始化滑块显示与样式
+            fontSizeLabel.textContent = fontSizeSlider.value + 'rem';
+            lineHeightLabel.textContent = lineHeightSlider.value;
+            applyStyle();
+
+            // ---------- PDF 打印（确保渲染完成）----------
+            function exportPDF() {
+                smartRender(true).finally(() => {
+                    // 使用 requestAnimationFrame 确保渲染完成后再打印
+                    requestAnimationFrame(() => {
+                        window.print();
+                    });
+                });
+            }
+
+            // ---------- 全屏 ----------
+            function toggleFullScreen() {
+                if (!document.fullscreenElement) {
+                    container.requestFullscreen().catch(console.warn);
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+
+            // ---------- 事件绑定 ----------
+            renderBtn.addEventListener('click', () => smartRender(true));
+            fullscreenBtn.addEventListener('click', toggleFullScreen);
+            pdfBtn.addEventListener('click', exportPDF);
+
+            // Ctrl+Enter 强制渲染
+            inputEl.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    smartRender(true);
+                }
+            });
+
+            // 输入框内容变化时自动防抖渲染（实时预览）
+            inputEl.addEventListener('input', () => debouncedRender(false));
+
+            // ---------- 立即执行：先应用主题，再启动 MathJax ----------
+            // 关键修复：在页面加载时立即应用主题，而不是等待 load 事件
+            applyTheme();
+            
+            // 启动 MathJax 就绪检测
+            waitForMathJax();
+        })();
+    </script>
+</body>
+</html>
