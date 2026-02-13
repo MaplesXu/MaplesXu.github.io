@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes">
+    <title>LaTeX·PDF渲染器</title>
+    <script>
+        window.MathJax = {
+            tex: { 
+                inlineMath: [['$','$'], ['\\(','\\)']], 
+                displayMath: [['$$','$$'], ['\\[','\\]']], 
+                processEscapes: true 
+            },
+            options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] },
+            loader: { load: ['[tex]/noerrors'] }
+        };
+    </script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-chtml.js" 
+            id="MathJax-script" 
+            async
+            onerror="this.onerror=null; let fallbackScript=document.createElement('script'); fallbackScript.src='https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js'; document.head.appendChild(fallbackScript);">
+    </script>
+    <style>
+        :root {
+            --body-bg: #e2ecf0;
+            --app-bg: white;
+            --border-light: #cfe1e9;
+            --accent-deep: #0b4452;
+            --accent-soft: #1f6573;
+            --accent-bright: #3897ad;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --render-font-size: 1.2rem;
+            --render-line-height: 2.0;
+            --render-padding: 24px 28px;
+            --dark-bg: #0f262e;
+            --dark-card: #1f404a;
+            --dark-text: #e8f3f0;
+            --dark-border: #4e7b8a;
+            --sidebar-width: 280px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--body-bg);
+            font-family: var(--font-body);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        body.dark-mode {
+            --body-bg: #0f262e;
+            --app-bg: var(--dark-card);
+            --border-light: var(--dark-border);
+            --accent-deep: #b5e4ed;
+            --accent-soft: #8ccbd9;
+            color: var(--dark-text);
+        }
+        body.dark-mode .app {
+            background: var(--app-bg);
+            border-color: #2c6573;
+            color: #eaf7fb;
+        }
+        body.dark-mode .sub,
+        body.dark-mode .input-box,
+        body.dark-mode .render-area,
+        body.dark-mode .badge {
+            background: #1f454e;
+            border-color: #2a6a7a;
+            color: #e2f0f5;
+        }
+
+        .app {
+            max-width: 950px;
+            width: 100%;
+            background: var(--app-bg);
+            border-radius: 24px;
+            box-shadow: 0 16px 30px -10px #1b4a5a30;
+            padding: 24px 28px;
+            border: 1px solid var(--border-light);
+            transition: background 0.2s, border 0.2s;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 550;
+            color: var(--accent-deep);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        h1 span {
+            background: var(--accent-soft);
+            color: white;
+            font-size: 0.7rem;
+            padding: 4px 14px;
+            border-radius: 30px;
+        }
+
+        .sub {
+            font-size: 0.85rem;
+            color: #256575;
+            background: #ecf7fb;
+            padding: 10px 18px;
+            border-radius: 20px;
+            border-left: 5px solid var(--accent-bright);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .input-box {
+            background: #f6fcff;
+            border-radius: 20px;
+            padding: 18px;
+            border: 1px solid var(--border-light);
+            margin-bottom: 16px;
+        }
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #0e5563;
+            margin-bottom: 10px;
+        }
+        textarea {
+            width: 100%;
+            padding: 16px 18px;
+            border: 1px solid #bfd7e2;
+            border-radius: 18px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            background: white;
+            resize: vertical;
+        }
+        textarea:focus {
+            border-color: #318ca0;
+            outline: none;
+            box-shadow: 0 0 0 2px #318ca030;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+            margin: 12px 0 8px;
+        }
+        .btn {
+            border: none;
+            background: #1d6d7c;
+            color: white;
+            padding: 10px 26px;
+            border-radius: 36px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: 1px solid #ffffff80;
+            box-shadow: 0 6px 12px -8px #0c4a55;
+            transition: 0.1s;
+        }
+        .btn:hover {
+            background: #2a889b;
+            transform: scale(0.97);
+        }
+        .btn-outline {
+            background: white;
+            color: #1a6b78;
+            border: 1px solid #3993a8;
+            box-shadow: none;
+        }
+        .btn-outline:hover {
+            background: #ecf8fc;
+        }
+
+        .render-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 22px 0 10px;
+        }
+        .render-title {
+            font-weight: 600;
+            color: #0a5a67;
+            font-size: 1rem;
+        }
+
+        .render-area {
+            background: #faffff;
+            border-radius: 20px;
+            padding: var(--render-padding, 24px 28px);
+            border: 1px solid #c0dbe6;
+            box-shadow: inset 0 1px 4px #00000008;
+            overflow-x: auto;
+            font-size: var(--render-font-size, 1.2rem);
+            line-height: var(--render-line-height, 2.0);
+            min-height: 150px;
+            transition: all 0.2s, background 0.2s, color 0.2s;
+            font-family: var(--render-font, var(--font-body));
+        }
+        body.dark-mode .render-area {
+            background: #1f4f59;
+            border-color: #398b9c;
+            color: #f2fcff;
+        }
+
+        .render-area:-webkit-full-screen {
+            background: #f5fcff;
+            padding: 40px;
+            font-size: var(--render-font-size, 1.2rem);
+        }
+        .render-area:fullscreen {
+            background: #f5fcff;
+            padding: 40px;
+            font-size: var(--render-font-size, 1.2rem);
+        }
+        .render-area.fullscreen-active {
+            background: #edf9fc;
+            box-shadow: 0 0 0 3px rgba(56,151,173,0.2);
+        }
+        body.dark-mode .render-area.fullscreen-active {
+            background: #2a606b;
+        }
+
+        .status-line {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-top: 14px;
+            font-size: 0.75rem;
+            color: #307180;
+            gap: 18px;
+        }
+        .badge {
+            background: #e2f0f5;
+            padding: 4px 14px;
+            border-radius: 30px;
+        }
+        hr {
+            border: 0.5px solid #cde3ec;
+            margin: 16px 0 8px;
+        }
+
+        @media print {
+            body, body.dark-mode {
+                background: white !important;
+                padding: 0;
+                margin: 0;
+            }
+            .app {
+                background: transparent !important;
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                margin: 0;
+                max-width: 100%;
+            }
+            .input-box, .toolbar, .render-header, .status-line, 
+            hr, .sub, h1 span, .btn, .btn-outline, 
+            .settings-sidebar, .sidebar-toggle-btn, h1 {
+                display: none !important;
+            }
+            .render-area {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 1.2cm !important;
+                background: white !important;
+                color: black !important;
+                font-size: var(--render-font-size, 12pt) !important;
+                line-height: var(--render-line-height, 1.8) !important;
+                font-family: var(--render-font, serif) !important;
+                margin: 0 auto;
+                width: 100%;
+            }
+            mjx-container {
+                color: black !important;
+            }
+        }
+
+        .sidebar-toggle-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background: var(--accent-soft);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 26px;
+            box-shadow: 0 8px 18px rgba(0,40,50,0.2);
+            cursor: pointer;
+            z-index: 1001;
+            border: 2px solid #ffffffcc;
+            transition: 0.2s;
+        }
+        .sidebar-toggle-btn:hover {
+            background: var(--accent-bright);
+            transform: rotate(30deg);
+        }
+        body.dark-mode .sidebar-toggle-btn {
+            background: #489dad;
+            border-color: #b3e4f0;
+        }
+
+        .settings-sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--app-bg);
+            box-shadow: -6px 0 20px rgba(20,60,70,0.25);
+            padding: 28px 20px;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+            border-left: 1px solid var(--border-light);
+            overflow-y: auto;
+            backdrop-filter: blur(4px);
+        }
+        .settings-sidebar.active {
+            transform: translateX(0);
+        }
+        body.dark-mode .settings-sidebar {
+            background: var(--dark-card);
+            border-left-color: #2c6b7a;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            font-weight: 600;
+            color: var(--accent-deep);
+        }
+        .sidebar-header h3 {
+            font-size: 1.35rem;
+            margin: 0;
+        }
+        .close-sidebar {
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0 8px;
+            color: var(--accent-soft);
+        }
+        .close-sidebar:hover {
+            color: var(--accent-bright);
+        }
+
+        .sidebar-item {
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sidebar-item label {
+            font-weight: 600;
+            color: var(--accent-deep);
+            font-size: 0.95rem;
+        }
+        body.dark-mode .sidebar-item label {
+            color: #caeaf0;
+        }
+        select, input[type="range"] {
+            padding: 8px 12px;
+            border-radius: 30px;
+            border: 1px solid #96c0cc;
+            background: white;
+            font-size: 0.85rem;
+        }
+        body.dark-mode select, body.dark-mode input[type="range"] {
+            background: #2d616e;
+            color: white;
+            border-color: #8dcbd6;
+        }
+        .value-display {
+            font-size: 0.8rem;
+            color: #1d7585;
+            margin-left: 6px;
+        }
+
+        .theme-radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 5px;
+        }
+        .theme-radio-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .theme-radio-item input[type="radio"] {
+            accent-color: var(--accent-bright);
+            width: 16px;
+            height: 16px;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <h1>
+            LaTeX·渲染器
+        </h1>
+        <div class="input-box">
+            <div class="input-header">
+                <span>📋 LaTeX 源码</span>
+            </div>
+            <textarea id="latexInput" rows="6">\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}</textarea>
+        </div>
+        <div class="toolbar">
+            <button class="btn" id="renderBtn">
+                ⚡ 渲染公式 (Ctrl+Enter)
+            </button>
+            <button class="btn btn-outline" id="fullscreenBtn">
+                📺 全屏阅读
+            </button>
+            <button class="btn btn-outline" id="pdfBtn">
+                📄 生成PDF
+            </button>
+        </div>
+        <div class="render-header">
+            <span class="render-title">✨ 渲染结果</span>
+        </div>
+        <div id="mathContainer" class="render-area">
+        </div>
+        <hr>
+    </div>
+    <div class="sidebar-toggle-btn" id="sidebarToggleBtn">⚙️</div>
+    <div class="settings-sidebar" id="settingsSidebar">
+        <div class="sidebar-header">
+            <h3>🛠️ 渲染设置</h3>
+            <span class="close-sidebar" id="closeSidebarBtn">✕</span>
+        </div>
+        <div class="sidebar-item">
+            <label>🖋️ 字体</label>
+            <select id="fontSelect">
+                <option value="'Inter', sans-serif">无衬线 (Inter)</option>
+                <option value="'Times New Roman', serif">衬线 (Times)</option>
+                <option value="'JetBrains Mono', monospace">等宽 (代码)</option>
+                <option value="'STIX Two Math', serif">STIX 数学</option>
+            </select>
+        </div>
+        <div class="sidebar-item">
+            <label>🔠 字号 <span id="fontSizeLabel" class="value-display">1.2rem</span></label>
+            <input type="range" id="fontSizeSlider" min="0.8" max="1.8" step="0.05" value="1.2">
+        </div>
+        <div class="sidebar-item">
+            <label>📏 行距 <span id="lineHeightLabel" class="value-display">2.0</span></label>
+            <input type="range" id="lineHeightSlider" min="1.2" max="2.8" step="0.1" value="2.0">
+        </div>
+        <div class="sidebar-item">
+            <label>🌓 深色主题</label>
+            <div class="theme-radio-group">
+                <div class="theme-radio-item">
+                    <input type="radio" name="themeMode" id="themeAuto" value="auto" checked>
+                    <label for="themeAuto">📱 跟随系统</label>
+                </div>
+                <div class="theme-radio-item">
+                    <input type="radio" name="themeMode" id="themeLight" value="light">
+                    <label for="themeLight">☀️ 亮色</label>
+                </div>
+                <div class="theme-radio-item">
+                    <input type="radio" name="themeMode" id="themeDark" value="dark">
+                    <label for="themeDark">🌙 暗色</label>
+                </div>
+            </div>
+        </div>
+        <p style="font-size:0.75rem; color:#47909e; margin-top:12px;">
+            ⚡ 点击齿轮或侧边栏左侧区域关闭
+        </p>
+    </div>
+    <script>
+        (function(){
+            "use strict";
+
+            const inputEl = document.getElementById('latexInput');
+            const container = document.getElementById('mathContainer');
+            const renderBtn = document.getElementById('renderBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const pdfBtn = document.getElementById('pdfBtn');
+
+            const sidebar = document.getElementById('settingsSidebar');
+            const toggleBtn = document.getElementById('sidebarToggleBtn');
+            const closeBtn = document.getElementById('closeSidebarBtn');
+
+            const fontSelect = document.getElementById('fontSelect');
+            const fontSizeSlider = document.getElementById('fontSizeSlider');
+            const fontSizeLabel = document.getElementById('fontSizeLabel');
+            const lineHeightSlider = document.getElementById('lineHeightSlider');
+            const lineHeightLabel = document.getElementById('lineHeightLabel');
+            const themeAuto = document.getElementById('themeAuto');
+            const themeLight = document.getElementById('themeLight');
+            const themeDark = document.getElementById('themeDark');
+
+            window.styleSettings = {
+                fontFamily: "'Inter', sans-serif",
+                fontSize: '1.2rem',
+                lineHeight: '2.0',
+                darkMode: false,
+                themeMode: 'auto'
+            };
+
+            function autoWrapDelimiters(text) {
+                if (!text) return '';
+                let lines = text.split('\n');
+                return lines.map(line => {
+                    let trimmed = line.trim();
+                    if (trimmed === '') return line;
+                    const hasDelimiter = /[$]|\\\(|\\\[|\\\)|\\\]|\$\$/.test(line);
+                    const looksLikeLatex = /\\[a-zA-Z]+|[_\^]/.test(line);
+                    if (!hasDelimiter && looksLikeLatex) {
+                        return '$' + line + '$';
+                    }
+                    return line;
+                }).join('\n');
+            }
+
+            function escapeHtml(unsafe) {
+                return unsafe.replace(/&/g, '&amp;')
+                             .replace(/</g, '&lt;')
+                             .replace(/>/g, '&gt;')
+                             .replace(/"/g, '&quot;')
+                             .replace(/'/g, '&#039;');
+            }
+
+            function renderWithAutoDelimiters() {
+                let source = inputEl.value;
+                let processed = autoWrapDelimiters(source);
+                let lines = processed.split('\n');
+                let html = '';
+                lines.forEach(line => {
+                    if (line.trim() === '') {
+                        html += '<br>';
+                    } else {
+                        html += `<p style="margin:0.6rem 0;">${escapeHtml(line)}</p>`;
+                    }
+                });
+                container.innerHTML = html;
+
+                if (window.MathJax && typeof MathJax.texReset === 'function') {
+                    MathJax.texReset();
+                    return MathJax.typesetPromise([container]).catch(e => {
+                        console.warn('MathJax渲染异常', e);
+                        container.innerHTML += '<p style="color:#b34a4a;">⚠️ 公式语法错误，请检查</p>';
+                    });
+                } else {
+                    return new Promise((resolve, reject) => {
+                        let retry = 0;
+                        let timer = setInterval(() => {
+                            if (window.MathJax && MathJax.texReset) {
+                                clearInterval(timer);
+                                MathJax.texReset();
+                                MathJax.typesetPromise([container]).then(resolve).catch(reject);
+                            }
+                            if (++retry > 40) {
+                                clearInterval(timer);
+                                reject('MathJax加载超时');
+                            }
+                        }, 120);
+                    });
+                }
+            }
+
+            let systemDarkMedia = window.matchMedia('(prefers-color-scheme: dark)');
+
+            function applyThemeMode() {
+                const mode = document.querySelector('input[name="themeMode"]:checked')?.value || 'auto';
+                window.styleSettings.themeMode = mode;
+
+                let isDark = false;
+                if (mode === 'auto') {
+                    isDark = systemDarkMedia.matches;
+                } else if (mode === 'dark') {
+                    isDark = true;
+                } else {
+                    isDark = false;
+                }
+
+                if (isDark) {
+                    document.body.classList.add('dark-mode');
+                } else {
+                    document.body.classList.remove('dark-mode');
+                }
+                window.styleSettings.darkMode = isDark;
+            }
+
+            function handleSystemThemeChange(e) {
+                const mode = document.querySelector('input[name="themeMode"]:checked')?.value || 'auto';
+                if (mode === 'auto') {
+                    applyThemeMode();
+                    renderWithAutoDelimiters();
+                }
+            }
+            systemDarkMedia.addEventListener('change', handleSystemThemeChange);
+
+            document.querySelectorAll('input[name="themeMode"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    applyThemeMode();
+                    renderWithAutoDelimiters();
+                });
+            });
+
+            function toggleSidebar() {
+                if (sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                } else {
+                    sidebar.classList.add('active');
+                }
+            }
+            toggleBtn.addEventListener('click', toggleSidebar);
+            closeBtn.addEventListener('click', () => sidebar.classList.remove('active'));
+
+            document.addEventListener('click', function(e) {
+                if (sidebar.classList.contains('active') && 
+                    !sidebar.contains(e.target) && 
+                    !toggleBtn.contains(e.target)) {
+                    sidebar.classList.remove('active');
+                }
+            });
+
+            function applySettingsToContainer() {
+                let font = fontSelect.value;
+                container.style.setProperty('--render-font', font);
+                window.styleSettings.fontFamily = font;
+                
+                let fs = fontSizeSlider.value + 'rem';
+                container.style.setProperty('--render-font-size', fs);
+                window.styleSettings.fontSize = fs;
+                fontSizeLabel.textContent = fs;
+                
+                let lh = lineHeightSlider.value;
+                container.style.setProperty('--render-line-height', lh);
+                window.styleSettings.lineHeight = lh;
+                lineHeightLabel.textContent = lh;
+            }
+
+            function bindSidebarUI() {
+                fontSelect.addEventListener('change', () => {
+                    applySettingsToContainer();
+                    renderWithAutoDelimiters();
+                });
+                fontSizeSlider.addEventListener('input', function() {
+                    let fs = this.value + 'rem';
+                    fontSizeLabel.textContent = fs;
+                    applySettingsToContainer();
+                });
+                lineHeightSlider.addEventListener('input', function() {
+                    lineHeightLabel.textContent = this.value;
+                    applySettingsToContainer();
+                });
+            }
+
+            function exportPDF() {
+                renderWithAutoDelimiters().then(() => {
+                    window.print();
+                }).catch(err => {
+                    console.warn('打印前渲染失败，仍尝试打印', err);
+                    window.print();
+                });
+            }
+
+            function toggleFullScreen() {
+                if (!document.fullscreenElement) {
+                    container.requestFullscreen().catch(err => alert(`全屏失败: ${err.message}`));
+                    container.classList.add('fullscreen-active');
+                } else {
+                    document.exitFullscreen();
+                    container.classList.remove('fullscreen-active');
+                }
+            }
+            container.addEventListener('fullscreenchange', () => {
+                if (document.fullscreenElement === container) {
+                    container.classList.add('fullscreen-active');
+                } else {
+                    container.classList.remove('fullscreen-active');
+                }
+            });
+
+            renderBtn.addEventListener('click', renderWithAutoDelimiters);
+            fullscreenBtn.addEventListener('click', toggleFullScreen);
+            pdfBtn.addEventListener('click', exportPDF);
+
+            inputEl.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    renderWithAutoDelimiters();
+                }
+            });
+
+            window.addEventListener('load', function() {
+                applyThemeMode();
+                fontSizeLabel.textContent = fontSizeSlider.value + 'rem';
+                lineHeightLabel.textContent = lineHeightSlider.value;
+                applySettingsToContainer();
+                renderWithAutoDelimiters().catch(err => console.warn('初始渲染警告:', err));
+                bindSidebarUI();
+            });
+        })();
+    </script>
+</body>
+</html>
