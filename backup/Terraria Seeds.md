@@ -1,5 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>MaplesXu</title><link>https://MaplesXu.github.io</link><description>MaplesXu's blog</description><copyright>MaplesXu</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://MaplesXu.github.io</link></image><lastBuildDate>Mon, 23 Feb 2026 09:46:26 +0000</lastBuildDate><managingEditor>MaplesXu</managingEditor><ttl>60</ttl><webMaster>MaplesXu</webMaster><item><title>Terraria Seeds</title><link>https://MaplesXu.github.io/post/Terraria%20Seeds.html</link><description>35个彩蛋种子汇总：
+35个彩蛋种子汇总：
 出生点随机 - how did i get here
 出生点由队伍决定 - royale with cheese
 出生在地底，地表层被填满 - mole people
@@ -17,7 +16,7 @@
 地下小屋规模变超级大 - abandoned manors
 生命树生成激增，且规模夸张 - save the rainforest
 空岛数量暴增 - the care bears movie
-双地牢，且形成地下城 - double daring dangers &amp; dual dungeons
+双地牢，且形成地下城 - double daring dangers & dual dungeons
 世界海拔极高，地表接近太空 - such great heights
 地表被沙漠化 - sandy britches
 地表被发光蘑菇化 - toadstool
@@ -41,4 +40,3 @@
 速通永夜刃种子：2385287
 速通永夜刃种子：8248951
 【超平坦种子！1分钟速通微光！我榨干最后一滴-哔哩哔哩】 https://b23.tv/FNZhkjS
-。</description><guid isPermaLink="true">https://MaplesXu.github.io/post/Terraria%20Seeds.html</guid><pubDate>Mon, 23 Feb 2026 09:45:55 +0000</pubDate></item><item><title>Terraria</title><link>https://MaplesXu.github.io/post/Terraria.html</link><description>Terraria。</description><guid isPermaLink="true">https://MaplesXu.github.io/post/Terraria.html</guid><pubDate>Thu, 19 Feb 2026 08:01:17 +0000</pubDate></item></channel></rss>
