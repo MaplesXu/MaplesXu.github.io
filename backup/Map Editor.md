@@ -1,1 +1,0 @@
-https://yal.cc/r/terrasavr/
