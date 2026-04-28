@@ -1,5 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>MaplesXu</title><link>https://MaplesXu.github.io</link><description>MaplesXu's blog</description><copyright>MaplesXu</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://MaplesXu.github.io</link></image><lastBuildDate>Tue, 28 Apr 2026 17:43:58 +0000</lastBuildDate><managingEditor>MaplesXu</managingEditor><ttl>60</ttl><webMaster>MaplesXu</webMaster><item><title>Map Editor</title><link>https://MaplesXu.github.io/post/Map%20Editor.html</link><description>https://yal.cc/r/terrasavr/。</description><guid isPermaLink="true">https://MaplesXu.github.io/post/Map%20Editor.html</guid><pubDate>Tue, 03 Mar 2026 15:18:28 +0000</pubDate></item><item><title>Terraria Seeds</title><link>https://MaplesXu.github.io/post/Terraria%20Seeds.html</link><description>35个彩蛋种子汇总：
+35个彩蛋种子汇总：
 出生点随机 - how did i get here
 出生点由队伍决定 - royale with cheese
 出生在地底，地表层被填满 - mole people
@@ -17,7 +16,7 @@
 地下小屋规模变超级大 - abandoned manors
 生命树生成激增，且规模夸张 - save the rainforest
 空岛数量暴增 - the care bears movie
-双地牢，且形成地下城 - double daring dangers &amp; dual dungeons
+双地牢，且形成地下城 - double daring dangers & dual dungeons
 世界海拔极高，地表接近太空 - such great heights
 地表被沙漠化 - sandy britches
 地表被发光蘑菇化 - toadstool
@@ -55,4 +54,4 @@
 2043356054，中世界猩红（败因：三金字塔但无法老套，缺少雀杖，邪恶分布太广）
 247874705，中世界猩红（败因：缺少熔岩护身符，巨型龙蛋太偏僻）
 共同败因：无雏翼
-虽然上面那些种子被我淘汰了，但它们照样很强，你们也可以用，以后每期开荒神种视频我也会把淘汰的种子放出来。</description><guid isPermaLink="true">https://MaplesXu.github.io/post/Terraria%20Seeds.html</guid><pubDate>Mon, 23 Feb 2026 09:45:55 +0000</pubDate></item><item><title>Terraria</title><link>https://MaplesXu.github.io/post/Terraria.html</link><description>Terraria。</description><guid isPermaLink="true">https://MaplesXu.github.io/post/Terraria.html</guid><pubDate>Thu, 19 Feb 2026 08:01:17 +0000</pubDate></item></channel></rss>
+虽然上面那些种子被我淘汰了，但它们照样很强，你们也可以用，以后每期开荒神种视频我也会把淘汰的种子放出来
